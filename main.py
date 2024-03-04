@@ -1,56 +1,95 @@
 import pygame
-import os
+from pygame.locals import *
 
-# Define some colors
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
+class Player(pygame.sprite.Sprite):
+    def __init__(self, aCharacterSpriteSheet):
+        super().__init__()
+        self.x = 0
+        self.y = 0
+        self.height = 80
+        self.width = 80
+        self.speed = 8
+        self.frame = 0
+        self.state = 0
+        self.buffer = 15
+        self.spriteSheet = pygame.image.load(aCharacterSpriteSheet)
+        self.image = self.spriteSheet.subsurface(Rect(self.x, self.y, self.width, self.height))
 
-# Initialize Pygame
-pygame.init()
+    def updatePos(self):
+        if self.state == 0:
+            self.state = 4
 
-# Set the dimensions of the screen
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Sprite Sheet Animation")
+        if self.state == 1:
+            self.state = 5
 
-# Load the sprite sheet image
-sprite_sheet = pygame.image.load("assets/spritesheet.png").convert_alpha()
+        if self.state == 2:
+            self.state = 6
 
-# Function to extract individual frames from the sprite sheet
-def get_images(sheet, x, y, width, height, columns, rows):
-    images = []
-    for j in range(rows):
-        for i in range(columns):
-            image = sheet.subsurface((x + i * width, y + j * height, width, height))
-            images.append(image)
-    return images
+        if self.state == 3:
+            self.state = 7
 
-# Extract frames for walking animations (left and right)
-walking_left_frames = get_images(sprite_sheet, 0, 0, 36, 128, 9, 1)
-walking_right_frames = get_images(sprite_sheet, 78, 0, 36, 128, 9, 1)
+        pressed_keys = pygame.key.get_pressed()
 
-# Extract frames for idle animation
-idle_frames = get_images(sprite_sheet, 13, 0, 36, 128, 1, 1)
 
-clock = pygame.time.Clock()
+        if pressed_keys[K_w]:
+                self.y += -self.speed
+                self.state = 0
 
-# Main loop
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
 
-    screen.fill(BLACK)
+        if pressed_keys[K_s]:
+                self.y += self.speed
+                self.state = 1
+            
 
-    # Draw the animation frames
-    current_frame = pygame.time.get_ticks() // 100 % 9  # Change the divisor to adjust animation speed
-    screen.blit(walking_left_frames[current_frame], (100, 100))
-    screen.blit(walking_right_frames[current_frame], (300, 100))
-    screen.blit(idle_frames[0], (500, 100))
+        if pressed_keys[K_d]:
+                self.x += self.speed
+                self.state = 2
+            
 
-    pygame.display.flip()
-    clock.tick(10)  # Adjust the parameter to control FPS
+        if pressed_keys[K_a]:
+                self.x += -self.speed 
+                self.state = 3
 
-pygame.quit()
+    def draw(self, window):
+        self.frame +=1
+        if self.frame == 8:
+            self.frame = 0
+
+        self.image = self.spriteSheet.subsurface(Rect(self.frame * self.width + self.buffer, self.state * self.height + self.buffer, self.width - self.buffer, self.height - self.buffer))
+        window.blit(self.image,(self.x, self.y))
+
+def play_music():
+    pygame.mixer.music.load('assets/music/soundtrack.mp3')
+    pygame.mixer.music.play(-1)
+
+
+def main():
+    pygame.init()  # Initialize Pygame
+
+    height = 1080
+    width = 1920
+    FPS = 15
+    clock = pygame.time.Clock()
+
+    window = pygame.display.set_mode((width, height))
+    pygame.display.set_caption("Animation Test")
+
+    link = Player("assets/spritesheet.png")
+    play_music()
+    
+    while True:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                exit()
+
+        link.updatePos()
+        window.fill((0, 0, 0))  # Clear screen before drawing
+        link.draw(window)
+
+        pygame.display.update()
+        clock.tick(FPS)
+
+if __name__ == "__main__":
+    main()
+
